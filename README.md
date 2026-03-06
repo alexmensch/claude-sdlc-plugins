@@ -11,6 +11,7 @@ Add this repository as a plugin marketplace, then install the plugins you want:
 /plugin install feature-definition@claude-sdl-plugins
 /plugin install feature-development@claude-sdl-plugins
 /plugin install roadmap@claude-sdl-plugins
+/plugin install debugging@claude-sdl-plugins
 ```
 
 ## Plugins

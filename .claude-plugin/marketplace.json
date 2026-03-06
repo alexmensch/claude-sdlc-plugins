@@ -55,6 +55,24 @@
         "planning",
         "releases"
       ]
+    },
+    {
+      "name": "debugging",
+      "source": "./plugins/debugging",
+      "description": "Investigate code and trace changes back through git history to their original requirements.",
+      "author": {
+        "name": "Alex Marshall"
+      },
+      "repository": "https://github.com/alexmensch/claude-sdl-plugins",
+      "license": "CC BY 4.0",
+      "keywords": [
+        "debugging",
+        "git",
+        "blame",
+        "traceability",
+        "requirements",
+        "history"
+      ]
     }
   ],
   "metadata": {
