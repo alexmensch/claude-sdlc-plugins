@@ -54,27 +54,28 @@ Do not ask every question at once. Work through them conversationally — ask th
 
 ---
 
-### Step 3 — Stabilise and confirm
+### Step 3 — Write the draft to disk
 
-When you have enough clarity to draft the full requirements table, do so and use `AskUserQuestion` to present it to the user. The question should be:
-
-> *"Here is the requirements table as I have it. Select **Ready to finalise** if this is complete, or select **Keep refining** and tell me what needs to change."*
-
-Provide two options: one to approve and one to continue refining. Do not produce the final output until the user confirms the table is ready.
-
-If the user requests changes, update the table and ask again. Repeat until approved.
-
----
-
-### Step 4 — Produce the output
-
-Once the user confirms the requirements are complete, do the following in order:
+When you have enough clarity to draft the full requirements table, write it to disk immediately — do not present the raw markdown inline. Do the following in order:
 
 1. Generate a UUID by running `uuidgen` via Bash. If `uuidgen` is unavailable, use `python3 -c "import uuid; print(uuid.uuid4())"`.
 2. Get today's date by running `date +%Y-%m-%d` via Bash.
 3. Create the `requirements/` directory in the current working directory if it does not already exist: `mkdir -p requirements`.
 4. Write the requirements to `requirements/{short-name}.md` (where `{short-name}` is a kebab-case slug of the feature name) using the format below. The frontmatter `guid` and `date` fields are mandatory.
-5. Tell the user the exact file path. Output the full file content in the conversation for reference.
+
+Then tell the user the file path and use `AskUserQuestion` to ask:
+
+> *"I've written the draft requirements to `requirements/{short-name}.md`. Please review the file, then select **Ready to finalise** if it's complete or **Keep refining** and tell me what needs to change."*
+
+Provide two options: one to approve and one to continue refining.
+
+If the user requests changes, update the file on disk and ask again. Repeat until approved.
+
+---
+
+### Step 4 — Finalise
+
+Once the user confirms the requirements are complete, tell them the final file path. No further action is needed — the file is already on disk.
 
 ---
 
