@@ -24,6 +24,7 @@ plugins/
     agents/
       technical-spec.md      # Produces technical specs from requirements (runs in foreground)
       test-writer.md         # Writes tests from specs (runs in background, isolated worktree)
+      coverage-reviewer.md   # Analyses test coverage of new code (runs in foreground)
       code-reviewer.md       # Reviews branch changes and returns findings (runs in foreground)
 
   roadmap/                  # Plugin: roadmap planning and communication
@@ -58,10 +59,11 @@ plugins/
 
 ### Agent isolation model
 
-All three agents in `feature-development` are invoked by the `new-feature` orchestrating skill. None of them interact directly with the user:
+All four agents in `feature-development` are invoked by the `new-feature` orchestrating skill. None of them interact directly with the user:
 
 - **technical-spec** — runs in the foreground, returns a spec to the orchestrator
 - **test-writer** — runs in the background in an isolated worktree, reports what it created
+- **coverage-reviewer** — runs in the foreground, returns a coverage report (or skips if no coverage tooling is detected)
 - **code-reviewer** — runs in the foreground, returns a findings report to the orchestrator
 
 The orchestrating skill handles all user interaction (presenting outputs, collecting approvals, making changes). Each agent file contains an explicit isolation statement reinforcing this boundary.
@@ -101,6 +103,7 @@ PRs include a `**Requirements:** \`<guid>\`` line in the body when created from 
 - **blame** — requires GitHub for PR tracing (steps 4–5). If the remote is not `github.com`, the chain stops at the commit level and the user is informed.
 - **write-changelog** — checks whether PRs have been merged before writing entries. Unmerged PRs are flagged to the user.
 - **communicate-roadmap** — reads the Target Users section from ROADMAP.md to inform tone and framing. Falls back to the Overview section if no user profiles exist.
+- **coverage-reviewer** — only runs if the project has coverage tooling configured. Does not install tools; skips gracefully if none are found.
 - **code-reviewer** — detects the default branch name dynamically rather than assuming `master`.
 
 ## Versioning
@@ -117,6 +120,7 @@ The skills form a pipeline. Data flows through this chain:
 ```
 define-feature → requirements file → plan-roadmap → ROADMAP.md
                                    → new-feature → technical-spec → test-writer
+                                                  → coverage-reviewer
                                                   → code-reviewer
                                                   → pull-request (with GUID)
                                                   → ROADMAP.md (shipped update)

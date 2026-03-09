@@ -1,6 +1,6 @@
 ---
 name: new-feature
-description: Follow a standard workflow for feature implementation in a project that ensures that a technical spec drives both test writing and implementation in parallel, followed by a code review that is always performed before a pull request is submitted to the default branch of the project's code base. Use when the user says "new feature", "build a feature", "implement a feature", "implement this", or provides a requirements file to build from.
+description: Follow a standard workflow for feature implementation in a project that ensures that a technical spec drives both test writing and implementation in parallel, followed by a test coverage review and code review that are always performed before a pull request is submitted to the default branch of the project's code base. Use when the user says "new feature", "build a feature", "implement a feature", "implement this", or provides a requirements file to build from.
 ---
 
 When implementing a new feature or new functionality in an existing codebase, you must adhere to the steps that follow with the goal of creating high quality, efficient, and clear code at all times. Follow these steps in strict order:
@@ -74,7 +74,16 @@ When implementing a new feature or new functionality in an existing codebase, yo
    The user's answer determines what changes — either the implementation is adjusted to match the tests, or (with the user's explicit approval) the tests are updated to match the implementation. In either case, do not proceed until the user has confirmed the resolution for every discrepancy.
 
    Then run all tests for the whole project. In no circumstances will you change any code in the tests without confirming with the user first. The strong principle here is that tests are written to cover desired functionality, not just to pass. Never change tests just to make them pass — you must determine whether there is a genuine bug in the implementation first. If you think there is a bug in a test, confirm with the user first. This step is completed when all tests pass.
-5. Next, invoke the code-reviewer agent. It will analyse the branch and return a structured findings report — it does not interact with the user or make any changes. Once you receive the report:
+5. Before the code review, check whether the project has code coverage tooling. Invoke the coverage-reviewer agent — it runs in the foreground and returns a structured report. The agent will detect coverage tooling automatically; if none is found, it returns a skip message and you move on to step 6.
+
+   If the agent returns coverage findings:
+
+   1. Present the full coverage report to the user using `AskUserQuestion`. Ask the user which uncovered areas (if any) they want tests added for, and which they accept as-is.
+   2. For any areas the user wants covered: write the additional tests yourself, following the existing test patterns in the codebase. Run the full test suite to confirm nothing is broken.
+   3. Create a **single commit** containing all coverage-related test additions.
+
+   If coverage is already complete or the user accepts all gaps, proceed without changes.
+6. Next, invoke the code-reviewer agent. It will analyse the branch and return a structured findings report — it does not interact with the user or make any changes. Once you receive the report:
 
    1. Present the complete findings to the user using `AskUserQuestion`. Show the violations table exactly as returned. Ask the user to indicate which violations they want fixed and which (if any) they want to dismiss. If there are no violations, inform the user and proceed.
    2. Make all approved changes yourself. Do not make changes the user has not approved.
@@ -83,19 +92,19 @@ When implementing a new feature or new functionality in an existing codebase, yo
 
    After this step completes: if the original requirements were provided as a file on disk (step 2), and any changes were made, append an "Out-of-spec changes" section to the requirements file documenting those changes. Use the `define-feature` skill to produce the correctly-formatted table rows if it is available; otherwise write the rows directly. Use the same table format as the requirements table. This section is an audit record of changes that were made outside the original specification.
 
-   **Context checkpoint:** The remaining steps (6–12) are mechanical and only require: the feature name, requirements GUID, requirements file path, feature branch name, and whether a ROADMAP.md update is applicable. The technical specification, implementation details, and code review findings are no longer needed. If the session context is approaching its limit, this is a safe point to compact.
-6. If the original requirements were provided as a file (step 2) and `./requirements/ROADMAP.md` exists, update the roadmap to record that this feature has shipped. The ROADMAP.md format is owned by the `plan-roadmap` skill — follow its structure exactly when making edits:
+   **Context checkpoint:** The remaining steps (7–13) are mechanical and only require: the feature name, requirements GUID, requirements file path, feature branch name, and whether a ROADMAP.md update is applicable. The technical specification, implementation details, and code review findings are no longer needed. If the session context is approaching its limit, this is a safe point to compact.
+7. If the original requirements were provided as a file (step 2) and `./requirements/ROADMAP.md` exists, update the roadmap to record that this feature has shipped. The ROADMAP.md format is owned by the `plan-roadmap` skill — follow its structure exactly when making edits:
     1. Find the feature's row in the planned table by matching the GUID extracted in step 2.
     2. Remove that row from its release section. If removing it leaves the release section with no remaining rows, remove the entire release section (heading, description, and empty table).
     3. Renumber the sequence column (`#`) of the remaining planned rows so they remain contiguous starting from 1.
     4. Add the feature to the Shipped table without a PR number — leave the PR column empty for now. If no Shipped table exists yet, create one following the structure defined in the `plan-roadmap` skill.
     5. Commit the ROADMAP.md change with the message: `Update roadmap: mark [feature-slug] as shipped`.
-7. Run the linting tool that's configured for the project.
-8. Run either the build command or mock deploy command for the project to ensure there are no build errors. Ensure that you do not build or deploy the project to production, you are only ensuring the project builds, deploys, or compiles correctly.
-9. Update README.md and CLAUDE.md in the project root for changes that are functionally noticeable to a user or developer of this codebase. Bug fixes, refactors, internal renaming, and test changes do not require documentation updates unless they change something observable from the outside.
-10. If the project uses semver and this change is being released, use the `semver` skill to determine the correct version bump, then update the relevant files. Usually package.json and manifest.json contain semver versions for the project, but check the project CLAUDE.md documentation if in doubt, and add this information to CLAUDE.md if it is not already there. If you are not certain that the version should be updated, ask the user.
-11. Ask the user to commit all changes and create a PR. When creating the PR, use the `pull-request` skill to format it correctly. If a requirements GUID was extracted in step 2, pass it to the PR so it can be included as a reference.
-12. After the PR is created and you have its number: if the roadmap was updated in step 6, add the PR number to the shipped entry in ROADMAP.md. Find the row for this feature in the Shipped table (match by feature name or GUID) and fill in the PR column with `#[PR number]`. Commit with the message: `Update roadmap: add PR reference for [feature-slug] (#PR)` and push to the PR branch.
+8. Run the linting tool that's configured for the project.
+9. Run either the build command or mock deploy command for the project to ensure there are no build errors. Ensure that you do not build or deploy the project to production, you are only ensuring the project builds, deploys, or compiles correctly.
+10. Update README.md and CLAUDE.md in the project root for changes that are functionally noticeable to a user or developer of this codebase. Bug fixes, refactors, internal renaming, and test changes do not require documentation updates unless they change something observable from the outside.
+11. If the project uses semver and this change is being released, use the `semver` skill to determine the correct version bump, then update the relevant files. Usually package.json and manifest.json contain semver versions for the project, but check the project CLAUDE.md documentation if in doubt, and add this information to CLAUDE.md if it is not already there. If you are not certain that the version should be updated, ask the user.
+12. Ask the user to commit all changes and create a PR. When creating the PR, use the `pull-request` skill to format it correctly. If a requirements GUID was extracted in step 2, pass it to the PR so it can be included as a reference.
+13. After the PR is created and you have its number: if the roadmap was updated in step 7, add the PR number to the shipped entry in ROADMAP.md. Find the row for this feature in the Shipped table (match by feature name or GUID) and fill in the PR column with `#[PR number]`. Commit with the message: `Update roadmap: add PR reference for [feature-slug] (#PR)` and push to the PR branch.
 
 ## Handling workflow deviations
 
@@ -124,14 +133,15 @@ The data handovers and sequencing listed in the steps above are:
 2. technical-spec agent analyses codebase, produces spec, confirms with user in its own session -> approved technical spec returned to you
 3. You hand the approved spec to BOTH implementer (background, isolated worktree) AND test-writer (background, isolated worktree) — these run in parallel
 4. Both agents write files and report what they created -> you commit implementer's work in its worktree, merge into the feature branch, remove its worktree -> then commit test-writer's work in its worktree, merge into the feature branch, remove its worktree -> compare test expectations against implementation and present any design discrepancies to the user for resolution -> run all tests
-5. code-reviewer reviews and returns findings report -> orchestrator presents findings to user, makes approved fixes, runs tests, commits -> if requirements came from a file and changes were made, append out-of-spec section to requirements file
-6. If requirements came from a file and ROADMAP.md exists: feature moved from planned to shipped table (without PR number), sequence renumbered, committed
-7. Remaining steps (lint, build, docs, semver, PR with GUID) completed in order
-8. If roadmap was updated in step 6: add PR number to shipped entry, commit, push to PR branch
+5. coverage-reviewer checks for coverage tooling -> if found, runs coverage and returns report -> orchestrator presents findings to user, writes any requested tests, commits -> if no coverage tooling, step is skipped
+6. code-reviewer reviews and returns findings report -> orchestrator presents findings to user, makes approved fixes, runs tests, commits -> if requirements came from a file and changes were made, append out-of-spec section to requirements file
+7. If requirements came from a file and ROADMAP.md exists: feature moved from planned to shipped table (without PR number), sequence renumbered, committed
+8. Remaining steps (lint, build, docs, semver, PR with GUID) completed in order
+9. If roadmap was updated in step 7: add PR number to shipped entry, commit, push to PR branch
 
 ## Commit granularity
 
-Make commits at each stage of the process above. I expect a single commit for the implementation (created when committing the implementer agent's work in its worktree), a single commit for the test implementation (created when committing the test-writer agent's work in its worktree), a single code review commit, a roadmap update commit (if applicable), a single commit for all remaining steps (lint fixes, docs, semver), and a roadmap PR reference commit after PR creation (if applicable).
+Make commits at each stage of the process above. I expect a single commit for the implementation (created when committing the implementer agent's work in its worktree), a single commit for the test implementation (created when committing the test-writer agent's work in its worktree), a single coverage tests commit (if coverage gaps were addressed), a single code review commit, a roadmap update commit (if applicable), a single commit for all remaining steps (lint fixes, docs, semver), and a roadmap PR reference commit after PR creation (if applicable).
 
 ## Avoiding repetition
 
