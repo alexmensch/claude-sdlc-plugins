@@ -23,7 +23,7 @@ Determine whether the project has code coverage configured:
    - **Rust**: look for `cargo-tarpaulin`, `cargo-llvm-cov`, or `grcov` in project config or CI files.
    - **Other languages**: check for common coverage tools in CI config files (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `Makefile`).
 
-3. If you find a coverage tool, determine the command to run coverage and produce a report. Prefer machine-readable output formats (JSON, LCOV, Cobertura XML) when available, as they are easier to parse. Fall back to text output if no structured format is available.
+3. If you find a coverage tool, determine the command to run coverage and produce a **text summary report**. Most tools print a table showing per-file percentages and uncovered line ranges by default — that is the format you want. Do not configure the tool to produce LCOV, JSON, or other machine-readable formats, and do not write scripts to parse those formats. The text summary is sufficient.
 
 4. **If no coverage tooling is found**, stop immediately and return:
 
@@ -56,7 +56,7 @@ Store this mapping of `file → [line ranges]` for use in Step 4.
 
 ### Step 3 — Run tests with coverage
 
-Run the test suite with the coverage command identified in Step 1. If the coverage tool supports limiting instrumentation to specific files, scope it to the changed files from Step 2 to reduce noise.
+Run the test suite with the coverage command identified in Step 1. Ensure the output includes a **text summary** that shows per-file coverage with uncovered line ranges — most tools produce this by default (e.g. vitest, jest, c8, pytest-cov, go test -cover all print a table with uncovered lines).
 
 If the coverage run fails:
 - If it fails due to a test failure, report the test failure and stop — do not proceed with coverage analysis on a failing suite.
@@ -66,11 +66,14 @@ If the coverage run fails:
 
 ### Step 4 — Analyse coverage of new code
 
-Using the coverage output from Step 3 and the line-range mapping from Step 2, identify which lines of **new or modified code** are not covered by tests.
+**Read the text summary from Step 3.** The coverage tool's output already tells you which lines are uncovered in each file — use that directly. Do not write custom scripts to parse LCOV, JSON, or other raw coverage data formats. The text summary is your primary source.
 
-For each uncovered region:
-1. Note the file path, line range, and what the code does (a brief description — e.g. "error handling branch for invalid input", "edge case when list is empty").
-2. Assess severity:
+Cross-reference the uncovered lines from the text summary with the new/modified line ranges from Step 2. Only report uncovered lines that fall within the new/modified ranges. You can do this comparison by reading both data sets — no scripting is needed.
+
+For each uncovered region in new code:
+1. Read the source file to understand what the uncovered lines do.
+2. Note the file path, line range, and a brief description (e.g. "error handling branch for invalid input", "edge case when list is empty").
+3. Assess severity:
    - **High**: business logic, data transformations, error handling paths, security-relevant code
    - **Medium**: utility functions, formatting, non-critical branches
    - **Low**: logging, debug output, trivial getters/setters
