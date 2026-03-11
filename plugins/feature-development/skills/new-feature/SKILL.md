@@ -25,23 +25,30 @@ When implementing a new feature or new functionality in an existing codebase, yo
 3. Once you have the approved technical spec, launch two agents in parallel: hand the full technical spec to the implementer agent (which runs in the background in an isolated worktree, and must be invoked with Write and Edit tool permissions), and hand the full technical spec to the test-writer agent (which also runs in the background in an isolated worktree, and must also be invoked with Write and Edit tool permissions). Both agents work from the requirements table in the technical spec. Wait for both agents to complete before proceeding to step 4.
 4. Once both agents have finished, merge their work into the current branch. Neither agent performs any git operations — they write files and report what they created, but leave their worktrees uncommitted. When each agent's Task completes, its result will include the worktree path and branch name.
 
+   **Critical: all git commands in this step must use `git -C "$MAIN"` where `$MAIN` is the main repository root** (not a worktree path). Your shell working directory may drift during agent coordination — bare `git` commands without `-C` will silently operate on whichever repo your cwd happens to be inside. Never use bare `git merge`, `git checkout`, or `git branch` here.
+
+   Before merging, capture the main repo path. This is the primary working directory for the project — the path shown in `git worktree list` that is **not** under `.claude/worktrees/`:
+   ```bash
+   MAIN="<main_repo_path>"
+   ```
+
    **Merge the implementer's work first:**
 
    1. Commit the implementer's work inside its worktree:
       ```bash
       git -C "<implementer_worktree_path>" add -A && git -C "<implementer_worktree_path>" commit -m "Implement [feature name]"
       ```
-   2. Merge the implementer's branch into your current feature branch:
+   2. Merge the implementer's branch into your feature branch — note the explicit `-C "$MAIN"`:
       ```bash
-      git merge <implementer_worktree_branch> --no-edit
+      git -C "$MAIN" merge <implementer_worktree_branch> --no-edit
       ```
       If this merge produces a conflict, stop and ask the user how to proceed.
    3. Remove the worktree and its branch:
       ```bash
-      git worktree remove <implementer_worktree_path> --force
-      git branch -D <implementer_worktree_branch>
+      git -C "$MAIN" worktree remove <implementer_worktree_path> --force
+      git -C "$MAIN" branch -D <implementer_worktree_branch>
       ```
-   4. Verify the implementation files are present: run `git log --oneline -3` to confirm the merge commit is visible.
+   4. Verify the implementation files are present: run `git -C "$MAIN" log --oneline -3` to confirm the merge commit is visible.
 
    **Then merge the test-writer's work:**
 
@@ -49,17 +56,17 @@ When implementing a new feature or new functionality in an existing codebase, yo
       ```bash
       git -C "<test_worktree_path>" add -A && git -C "<test_worktree_path>" commit -m "Add tests for [feature name]"
       ```
-   2. Merge the test-writer's branch into your current feature branch:
+   2. Merge the test-writer's branch into your feature branch:
       ```bash
-      git merge <test_worktree_branch> --no-edit
+      git -C "$MAIN" merge <test_worktree_branch> --no-edit
       ```
       If this merge produces a conflict, stop and ask the user how to proceed.
    3. Remove the worktree and its branch:
       ```bash
-      git worktree remove <test_worktree_path> --force
-      git branch -D <test_worktree_branch>
+      git -C "$MAIN" worktree remove <test_worktree_path> --force
+      git -C "$MAIN" branch -D <test_worktree_branch>
       ```
-   4. Verify the test files are present: run `git log --oneline -3` to confirm the merge commit is visible.
+   4. Verify the test files are present: run `git -C "$MAIN" log --oneline -3` to confirm the merge commit is visible.
 
    Implementation is merged first because test files typically reference implementation code, making the second merge cleaner.
 
@@ -134,7 +141,7 @@ The data handovers and sequencing listed in the steps above are:
 1. User input (file or chat) -> you clarify or read file -> requirements passed to technical-spec agent (foreground); GUID stored if present in file
 2. technical-spec agent analyses codebase, produces spec, confirms with user in its own session -> approved technical spec returned to you
 3. You hand the approved spec to BOTH implementer (background, isolated worktree) AND test-writer (background, isolated worktree) — these run in parallel
-4. Both agents write files and report what they created -> you commit implementer's work in its worktree, merge into the feature branch, remove its worktree -> then commit test-writer's work in its worktree, merge into the feature branch, remove its worktree -> compare test expectations against implementation and present any design discrepancies to the user for resolution -> run all tests
+4. Both agents write files and report what they created -> you commit implementer's work in its worktree, merge into the feature branch using `git -C "$MAIN"`, remove its worktree -> then commit test-writer's work in its worktree, merge into the feature branch using `git -C "$MAIN"`, remove its worktree -> compare test expectations against implementation and present any design discrepancies to the user for resolution -> run all tests
 5. coverage-reviewer runs in a foreground agent (keeps analysis out of main context) -> checks for coverage tooling -> if found, runs coverage and returns report with all findings -> orchestrator presents every finding and any incidental findings to user for approval, writes requested tests, commits -> if no coverage tooling, step is skipped
 6. code-reviewer reviews and returns findings report -> orchestrator presents findings to user, makes approved fixes, runs tests, commits -> if requirements came from a file and changes were made, append out-of-spec section to requirements file
 7. If requirements came from a file and ROADMAP.md exists: delegated to `plan-roadmap` via the Skill tool (marks feature as shipped, renumbers sequence, moves file to `shipped/`, commits)
