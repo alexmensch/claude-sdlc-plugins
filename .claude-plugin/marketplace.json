@@ -1,6 +1,6 @@
 {
   "name": "sdlc-plugins",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "owner": {
     "name": "Alex Marshall"
   },
@@ -88,6 +88,42 @@
         "release notes",
         "documentation",
         "product updates"
+      ]
+    },
+    {
+      "name": "legal",
+      "source": "./plugins/legal",
+      "description": "Trademark conflict research and regulatory compliance assessment for software products. Covers naming risks, GDPR, US state privacy laws, and other applicable frameworks.",
+      "author": {
+        "name": "Alex Marshall"
+      },
+      "repository": "https://github.com/alexmensch/claude-sdl-plugins",
+      "license": "CC BY 4.0",
+      "keywords": [
+        "legal",
+        "compliance",
+        "trademark",
+        "GDPR",
+        "privacy",
+        "regulatory"
+      ]
+    },
+    {
+      "name": "marketing",
+      "source": "./plugins/marketing",
+      "description": "Build user-focused marketing websites, topic-specific landing pages, and get SEO/GEO recommendations for software products.",
+      "author": {
+        "name": "Alex Marshall"
+      },
+      "repository": "https://github.com/alexmensch/claude-sdl-plugins",
+      "license": "CC BY 4.0",
+      "keywords": [
+        "marketing",
+        "website",
+        "landing page",
+        "SEO",
+        "GEO",
+        "copywriting"
       ]
     }
   ],

@@ -46,6 +46,22 @@ plugins/
   documentation/            # Plugin: user-facing documentation generation
     .claude-plugin/plugin.json
     skills/write-changelog/SKILL.md
+
+  legal/                    # Plugin: legal and compliance assessment
+    .claude-plugin/plugin.json
+    skills/
+      search-trademark/SKILL.md    # Trademark and naming conflict research
+      assess-compliance/SKILL.md   # Regulatory compliance assessment
+    agents/
+      trademark-researcher.md      # Web research for trademark/naming conflicts (runs in foreground)
+      compliance-researcher.md     # Web research for regulatory requirements (runs in foreground)
+
+  marketing/                # Plugin: marketing website and landing page generation
+    .claude-plugin/plugin.json
+    skills/
+      build-marketing-site/SKILL.md  # Full marketing site from product context
+      build-landing-page/SKILL.md    # Topic-specific landing pages (comparisons, migrations, etc.)
+      evaluate-seo/SKILL.md          # SEO/GEO evaluation and recommendations
 ```
 
 ## Naming conventions
@@ -79,6 +95,10 @@ Agents are invoked by orchestrating skills and never interact directly with the 
 **roadmap** (invoked by `plan-roadmap` and `define-strategy`):
 - **persona-researcher** — runs in the foreground, conducts web research to validate/challenge persona claims, returns a structured report (invoked by `plan-roadmap`)
 - **market-researcher** — runs in the foreground, researches competitive landscape, validates strategic claims about the market (invoked by `define-strategy`)
+
+**legal** (invoked by `search-trademark` and `assess-compliance`):
+- **trademark-researcher** — runs in the foreground, searches trademark registries, existing products, and SEO landscape for naming conflicts, returns a structured report (invoked by `search-trademark`)
+- **compliance-researcher** — runs in the foreground, researches applicable regulatory frameworks, enforcement patterns, and practical requirements, returns a structured report (invoked by `assess-compliance`)
 
 ### Requirements file format
 
@@ -141,6 +161,11 @@ PRs include a `**Requirements:** \`<guid>\`` line in the body when created from 
 - **communicate-roadmap** — reads the Target Users section from ROADMAP.md to inform tone and framing. Falls back to the Overview section if no user profiles exist.
 - **coverage-reviewer** — only runs if the project has coverage tooling configured. Does not install tools; skips gracefully if none are found.
 - **code-reviewer** — detects the default branch name dynamically rather than assuming `master`.
+- **search-trademark** — uses web research to check trademark registries and existing products. Results are informational, not legal advice.
+- **assess-compliance** — scans the codebase for data-handling patterns and researches applicable regulations. Produces a unified compliance report. Skips HIPAA by design. Output location is determined per-project.
+- **build-marketing-site** — auto-detects the project's framework for page generation. Falls back to static HTML if no framework is found. Output location is determined per-project.
+- **build-landing-page** — matches the style of any existing marketing site. Uses web research for comparison and migration pages.
+- **evaluate-seo** — can be invoked independently or by `build-marketing-site` and `build-landing-page`. Uses web research to assess competitive search landscape.
 
 ## Versioning
 
@@ -164,9 +189,19 @@ define-feature  → requirements file → plan-roadmap → ROADMAP.md
                                     → write-changelog (reads PR + requirements)
                                     → blame (traces code → PR → GUID → requirements)
                                     → communicate-roadmap (reads ROADMAP.md)
+
+search-trademark → trademark-researcher → naming risk report
+assess-compliance → compliance-researcher → COMPLIANCE.md
+                    (reads codebase, STRATEGY.md, ROADMAP.md, requirements files)
+
+build-marketing-site → evaluate-seo (optional)
+                       (reads STRATEGY.md, ROADMAP.md, README.md, codebase)
+build-landing-page   → evaluate-seo (optional)
+                       (reads STRATEGY.md, ROADMAP.md, existing marketing site)
+evaluate-seo         (standalone or invoked by marketing skills)
 ```
 
-The requirements GUID is the linking key across all of these.
+The requirements GUID is the linking key across the feature pipeline. The legal and marketing plugins read from the same product artifacts (STRATEGY.md, ROADMAP.md, requirements files) but do not write to them.
 
 ## When editing skills
 
