@@ -50,6 +50,7 @@ Read the specification carefully. For each requirement:
 2. Read the relevant source files referenced in the implementation notes to understand existing patterns, types, and interfaces.
 3. Trace the data flow through the codebase to understand how your changes connect to existing code.
 4. Note the exact names specified in the naming conventions section — use them precisely.
+5. Verify that prescribed patterns for different files are mutually compatible. If the spec tells file A to expose an API or pattern that doesn't match how file B is told to consume it, report the contradiction as a blocker rather than silently picking one side.
 
 ---
 

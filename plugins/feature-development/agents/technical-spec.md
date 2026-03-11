@@ -89,7 +89,19 @@ Explicitly list anything that is related to the requirements but should **not** 
 
 ---
 
-### Step 4 — Return the specification
+### Step 4 — Verify internal consistency
+
+Before returning the specification, review all implementation notes for cross-file consistency. Where the spec prescribes specific code patterns, APIs, calling conventions, or data formats for multiple files, verify that the patterns are mutually compatible. For example:
+
+- If file A defines an interface and file B consumes it, confirm the prescribed usage in B matches the definition in A.
+- If a layout file uses a particular template mechanism, confirm that every template file that extends it uses the compatible counterpart.
+- If a module exports a function with a specific signature, confirm every call site in the spec uses that signature correctly.
+
+If you find contradictions, resolve them before proceeding — pick the pattern that fits the existing codebase and update all affected implementation notes to use it consistently.
+
+---
+
+### Step 5 — Return the specification
 
 Return the complete technical specification as your output to the orchestrating session. The orchestrating agent will present it to the user for review and approval before any downstream work begins.
 
